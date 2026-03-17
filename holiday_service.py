@@ -2,7 +2,7 @@ from datetime import date
 from models import Holiday, Query
 
 
-def get_kr_holidays(year: int) -> list[Holiday]:
+def get_kr_holidays(year: int, month: int=None) -> list[Holiday]:
     fixed_holidays = (
         (1, 1, "신정"),
         (3, 1, "삼일절"),
@@ -15,13 +15,18 @@ def get_kr_holidays(year: int) -> list[Holiday]:
     )
 
     holidays = []
-    for month, day, name in fixed_holidays:
-        holidays.append(Holiday("KR", date(year, month, day), name))
+    if month == None:
+        for mm, dd, name in fixed_holidays:
+            holidays.append(Holiday("KR", date(year, mm, dd), name))
+    else:
+        for mm, dd, name in fixed_holidays:
+            if month == mm:
+                holidays.append(Holiday("KR", date(year, mm, dd), name))
 
     return holidays
 
 
-def get_us_holidays(year: int) -> list[Holiday]:
+def get_us_holidays(year: int, month: int=None) -> list[Holiday]:
     fixed_holidays = (
         (1, 1, "New Year's Day"),
         (6, 19, "Juneteenth National Independence Day"),
@@ -31,10 +36,36 @@ def get_us_holidays(year: int) -> list[Holiday]:
     )
 
     holidays = []
-    for month, day, name in fixed_holidays:
-        holidays.append(Holiday("US", date(year, month, day), name))
+    if month == None:
+        for mm, dd, name in fixed_holidays:
+            holidays.append(Holiday("US", date(year, mm, dd), name))
+    else:
+        for mm, dd, name in fixed_holidays:
+            if month == mm:
+                holidays.append(Holiday("US", date(year, mm, dd), name))
 
     return holidays
 
-def get_holidays_by_query(query: Query) -> list[Holiday]:
+def nth_weekday_of_month():
     pass
+
+def last_weekday_of_month():
+    pass
+
+def get_holidays_by_query(query: Query) -> list[Holiday]:
+
+    holidays = []
+    if query.country == "KR":
+        holidays.extend(get_kr_holidays(query.year, query.month))
+        return holidays
+    
+    elif query.country == "US":
+        holidays.extend(get_us_holidays(query.year, query.month))
+        return holidays
+    
+    else:
+        holidays.extend(get_kr_holidays(query.year, query.month))
+        holidays.extend(get_us_holidays(query.year, query.month))
+        return holidays
+
+    
