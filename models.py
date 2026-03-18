@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Optional
 from datetime import date
 
+
 @dataclass
 class Holiday:
     country: str
@@ -12,6 +13,6 @@ class Holiday:
 
 @dataclass
 class Query:
-    country: Optional[str]   # "KR", "US", 또는 None(전체)
+    target: Optional[str]   # "KR", "US", "USM", "USB", 또는 None
     year: int
-    month: Optional[int] = None   # 1~12 또는 None
+    month: Optional[int] = None
