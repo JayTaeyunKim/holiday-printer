@@ -34,6 +34,7 @@ def get_kr_holidays(year: int, month: int = None) -> list[Holiday]:
     fixed_holidays = (
         (1, 1, "신정", None, None),
         (3, 1, "삼일절", None, None),
+        (5, 1, "노동절", None, None),
         (5, 5, "어린이날", None, None),
         (6, 6, "현충일", None, None),
         (7, 17, "제헌절", 2026, None),
@@ -255,6 +256,7 @@ def get_us_market_holidays(year: int, month: int = None) -> list[Holiday]:
 
     holidays = []
 
+    # 고정휴일
     for mm, dd, name, start_year, end_year in fixed_holidays:
         if start_year is not None and year < start_year:
             continue
@@ -272,6 +274,7 @@ def get_us_market_holidays(year: int, month: int = None) -> list[Holiday]:
         else:
             holidays.append(Holiday("USM", actual_day, name, "Market Holiday"))
 
+    # 변동휴일
     for mm, n, weekday, name in nth_weekday_holidays:
         if n == -1:
             holiday_day = last_weekday_of_month(year, mm, weekday)
@@ -280,6 +283,7 @@ def get_us_market_holidays(year: int, month: int = None) -> list[Holiday]:
 
         holidays.append(Holiday("USM", holiday_day, name, "Market Holiday"))
 
+    # Good Friday
     holidays.append(Holiday("USM", good_friday(year), "Good Friday", "Market Holiday"))
 
     holidays = [holiday for holiday in holidays if holiday.day.year == year]
@@ -389,6 +393,78 @@ def get_us_bond_market_holidays(year: int, month: int = None) -> list[Holiday]:
     return holidays
 
 
+from datetime import date, timedelta
+
+def get_us_settlement_holidays(year: int, month: int = None) -> list[Holiday]:
+    """
+    미국 결제 휴일(Fed 기준) 캘린더.
+    country="USS" 사용.
+    실제 결제 불가 날짜 중심으로 반환한다.
+    """
+
+    # (월, 일, 이름, 시작연도, 종료연도)
+    fixed_holidays = (
+        (1, 1, "New Year's Day", None, None),
+        (6, 19, "Juneteenth National Independence Day", 2021, None),
+        (7, 4, "Independence Day", None, None),
+        (11, 11, "Veterans Day", None, None),
+        (12, 25, "Christmas Day", None, None),
+    )
+
+    # (월, n, 요일(월:1~일:7), 이름)
+    nth_weekday_holidays = (
+        (1, 3, 1, "Martin Luther King Jr. Day"),
+        (2, 3, 1, "Washington's Birthday"),
+        (5, -1, 1, "Memorial Day"),
+        (9, 1, 1, "Labor Day"),
+        (10, 2, 1, "Columbus Day"),
+        (11, 4, 4, "Thanksgiving Day"),
+    )
+
+    holidays: list[Holiday] = []
+
+    # 1) 고정 결제 휴일
+    for mm, dd, name, start_year, end_year in fixed_holidays:
+        if start_year is not None and year < start_year:
+            continue
+        if end_year is not None and year > end_year:
+            continue
+
+        actual_day = date(year, mm, dd)
+
+        # Fed 기준:
+        # - 토요일 휴일이면 전 금요일은 open
+        # - 일요일 휴일이면 다음 월요일 closed
+        if actual_day.isoweekday() == 6:   # Saturday
+            # 결제 휴일로 추가하지 않음 (전 금요일 open)
+            pass
+        elif actual_day.isoweekday() == 7: # Sunday
+            settlement_day = actual_day + timedelta(days=1)
+            holidays.append(Holiday("USS", settlement_day, name, "Settlement Holiday (Observed)"))
+        else:
+            holidays.append(Holiday("USS", actual_day, name, "Settlement Holiday"))
+
+    # 2) 요일 기반 결제 휴일
+    for mm, n, weekday, name in nth_weekday_holidays:
+        if n == -1:
+            holiday_day = last_weekday_of_month(year, mm, weekday)
+        else:
+            holiday_day = nth_weekday_of_month(year, mm, weekday, n)
+
+        holidays.append(Holiday("USS", holiday_day, name, "Settlement Holiday"))
+
+    # 3) 연 필터
+    holidays = [holiday for holiday in holidays if holiday.day.year == year]
+
+    # 4) 월 필터
+    if month is not None:
+        holidays = [holiday for holiday in holidays if holiday.day.month == month]
+
+    # 5) 정렬
+    holidays.sort(key=lambda h: (h.day, h.name, h.note))
+    return holidays
+
+
 def nth_weekday_of_month(year: int, month: int, weekday: int, n: int) -> date:
     # 특정 년/월의 n번째 특정 요일 날짜 반환
     # weekday: isoweekday 기준 (1=Mon, ..., 7=Sun)
@@ -433,11 +509,11 @@ def get_holidays_by_query(query: Query) -> list[Holiday]:
         holidays.extend(get_us_market_holidays(query.year, query.month))
     elif query.target == "USB":
         holidays.extend(get_us_bond_market_holidays(query.year, query.month))
+    elif query.target == "USS":
+        holidays.extend(get_us_settlement_holidays(query.year, query.month))
     else:
         holidays.extend(get_kr_holidays(query.year, query.month))
         holidays.extend(get_us_holidays(query.year, query.month))
 
     holidays.sort(key=lambda h: (h.day, h.country, h.name, h.note))
     return holidays
-
-    

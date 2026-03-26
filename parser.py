@@ -1,7 +1,7 @@
 from models import Query
 
 
-VALID_TARGETS = {"KR", "US", "USM", "USB"}
+VALID_TARGETS = {"KR", "US", "USM", "USB", "USS"}
 
 
 def parse_input(text: str) -> Query:
@@ -43,7 +43,7 @@ def parse_input(text: str) -> Query:
         month_text = input_parts[2]
 
         if target not in VALID_TARGETS:
-            raise ValueError("대상은 KR, US, USM, USB 중 하나여야 합니다.")
+            raise ValueError("대상은 KR, US, USM, USB, USS 중 하나여야 합니다.")
         if not year_text.isdigit():
             raise ValueError("연도는 숫자로 입력해야 합니다.")
         if not month_text.isdigit():
