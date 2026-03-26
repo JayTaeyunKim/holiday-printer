@@ -513,7 +513,8 @@ def get_holidays_by_query(query: Query) -> list[Holiday]:
         holidays.extend(get_us_settlement_holidays(query.year, query.month))
     else:
         holidays.extend(get_kr_holidays(query.year, query.month))
-        holidays.extend(get_us_holidays(query.year, query.month))
+        holidays.extend(get_us_market_holidays(query.year, query.month))
+        holidays.extend(get_us_settlement_holidays(query.year, query.month))
 
     holidays.sort(key=lambda h: (h.day, h.country, h.name, h.note))
     return holidays

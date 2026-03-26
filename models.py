@@ -13,6 +13,6 @@ class Holiday:
 
 @dataclass
 class Query:
-    target: Optional[str]   # "KR", "US", "USM", "USB", 또는 None
+    target: Optional[str]   # "KR", "US", "USM", "USB", "USS", 또는 None
     year: int
     month: Optional[int] = None
